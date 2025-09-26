@@ -17,8 +17,26 @@ func (t Tensors) Multiply() Tensor {
 	return result
 }
 
-func (t Tensors) Sum(others Tensors) {
+func (t Tensors) Sum(others Tensors) Tensors {
 	for i, val := range others {
 		t[i] += val
 	}
+
+	return t
+}
+
+func (t Tensors) Subtract(others Tensors) Tensors {
+	for i, val := range others {
+		t[i] -= val
+	}
+
+	return t
+}
+
+func (t Tensors) Clone() Tensors {
+	newTensor := make(Tensors, len(t))
+
+	copy(newTensor, t)
+
+	return newTensor
 }

@@ -7,9 +7,14 @@ import (
 	"github.com/herlon214/go-neural/tensor"
 )
 
+type Loss tensor.Tensors
+type Result tensor.Tensors
+
 type Network struct {
 	hiddenLayers []*Layer
 	outputLayer  *Layer
+
+	disableBackpropagation bool
 }
 
 func New(inputSize int, hiddenLayersSize []int, outputLayerSize int, learningRate tensor.Tensor) *Network {
@@ -33,11 +38,11 @@ func New(inputSize int, hiddenLayersSize []int, outputLayerSize int, learningRat
 	}
 }
 
-func (n *Network) FeedForward(input tensor.Tensors) tensor.Tensors {
+func (n *Network) FeedForward(sample Sample) (Result, Loss) {
 	// Feed hidden layers
 	outputs := make([]tensor.Tensors, 0, len(n.hiddenLayers))
 	inputs := make([]tensor.Tensors, 0, len(n.hiddenLayers)+1)
-	inputs = append(inputs, input)
+	inputs = append(inputs, sample.Inputs)
 
 	for i, layer := range n.hiddenLayers {
 		output := layer.FeedForward(inputs[i])
@@ -49,19 +54,18 @@ func (n *Network) FeedForward(input tensor.Tensors) tensor.Tensors {
 	finalOutput := n.outputLayer.FeedForward(inputs[len(inputs)-1])
 
 	// Calculate loss
-	loss := make(tensor.Tensors, 0, len(finalOutput))
-	for _, val := range finalOutput {
-		loss = append(loss, 1-val)
-	}
+	loss := sample.Target.Clone().Subtract(finalOutput)
 
 	// Back propagation on the output layer
-	outputErr := n.outputLayer.BackPropagation(loss, inputs[len(inputs)-1], finalOutput)
+	if !n.disableBackpropagation {
+		outputErr := n.outputLayer.BackPropagation(loss, inputs[len(inputs)-1], finalOutput)
 
-	for i, layer := range slices.Backward(n.hiddenLayers) {
-		outputErr = layer.BackPropagation(outputErr, inputs[i], outputs[i])
+		for i, layer := range slices.Backward(n.hiddenLayers) {
+			outputErr = layer.BackPropagation(outputErr, inputs[i], outputs[i])
+		}
 	}
 
-	return loss
+	return Result(finalOutput), Loss(loss)
 }
 
 func (n *Network) String() string {
@@ -81,4 +85,12 @@ func (n *Network) String() string {
 	totalLayers := len(n.hiddenLayers) + 1
 
 	return fmt.Sprintf("Network{layers=%d, architecture=%s}", totalLayers, architecture)
+}
+
+func (n *Network) DisableBackpropagation() {
+	n.disableBackpropagation = true
+}
+
+func (n *Network) EnableBackpropagation() {
+	n.disableBackpropagation = false
 }

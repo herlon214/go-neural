@@ -37,6 +37,9 @@ func (l *Layer) Size() int {
 
 func (l *Layer) BackPropagation(errValues tensor.Tensors, inputs tensor.Tensors, outputs tensor.Tensors) tensor.Tensors {
 	errorsPrevLayer := make(tensor.Tensors, len(inputs))
+	for i := range len(inputs) {
+		errorsPrevLayer[i] = 0
+	}
 
 	for i, neuron := range l.neurons {
 		backErrors := neuron.BackPropagation(errValues[i], inputs, outputs[i])

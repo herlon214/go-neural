@@ -193,3 +193,124 @@ func BenchmarkTensors_Sum(b *testing.B) {
 		receiver.Sum(others)
 	}
 }
+
+func TestTensors_Subtract(t *testing.T) {
+	tests := []struct {
+		name     string
+		receiver Tensors
+		others   Tensors
+		expected Tensors
+	}{
+		{
+			name:     "subtract positive numbers",
+			receiver: Tensors{5.0, 7.0, 9.0},
+			others:   Tensors{1.0, 2.0, 3.0},
+			expected: Tensors{4.0, 5.0, 6.0},
+		},
+		{
+			name:     "subtract with negatives",
+			receiver: Tensors{1.0, -2.0, 3.0},
+			others:   Tensors{-1.0, 2.0, -3.0},
+			expected: Tensors{2.0, -4.0, 6.0},
+		},
+		{
+			name:     "subtract with zeros",
+			receiver: Tensors{1.0, 2.0, 3.0},
+			others:   Tensors{0.0, 0.0, 0.0},
+			expected: Tensors{1.0, 2.0, 3.0},
+		},
+		{
+			name:     "subtract resulting in negatives",
+			receiver: Tensors{1.0, 2.0, 3.0},
+			others:   Tensors{2.0, 4.0, 6.0},
+			expected: Tensors{-1.0, -2.0, -3.0},
+		},
+		{
+			name:     "subtract fractions",
+			receiver: Tensors{0.9, 0.7, 0.5},
+			others:   Tensors{0.4, 0.2, 0.1},
+			expected: Tensors{0.5, 0.5, 0.4},
+		},
+		{
+			name:     "single element",
+			receiver: Tensors{10.0},
+			others:   Tensors{3.0},
+			expected: Tensors{7.0},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Make a copy to preserve original for comparison
+			original := make(Tensors, len(tt.receiver))
+			copy(original, tt.receiver)
+
+			// Call Subtract method (modifies receiver in-place)
+			tt.receiver.Subtract(tt.others)
+
+			// Verify the result
+			if len(tt.receiver) != len(tt.expected) {
+				t.Errorf("Subtract() result length = %v, want %v", len(tt.receiver), len(tt.expected))
+				return
+			}
+
+			for i := range tt.receiver {
+				if math.Abs(float64(tt.receiver[i]-tt.expected[i])) > 1e-10 {
+					t.Errorf("Subtract() result[%d] = %v, want %v", i, tt.receiver[i], tt.expected[i])
+				}
+			}
+
+			// Verify that the original was modified (in-place operation)
+			for i := range original {
+				if math.Abs(float64(original[i]-tt.others[i]-tt.receiver[i])) > 1e-10 {
+					t.Errorf("Subtract() should modify receiver in-place. Expected original[%d] - others[%d] = receiver[%d]", i, i, i)
+				}
+			}
+		})
+	}
+}
+
+func TestTensors_Subtract_EdgeCases(t *testing.T) {
+	t.Run("empty tensors", func(t *testing.T) {
+		receiver := Tensors{}
+		others := Tensors{}
+		receiver.Subtract(others)
+
+		if len(receiver) != 0 {
+			t.Errorf("Subtract() with empty tensors should remain empty, got length %d", len(receiver))
+		}
+	})
+
+	t.Run("mismatched lengths should not panic", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("Subtract() with mismatched lengths should not panic, but it did: %v", r)
+			}
+		}()
+
+		receiver := Tensors{5.0, 6.0, 7.0}
+		others := Tensors{1.0, 2.0} // shorter
+
+		// This should only modify the first len(others) elements
+		receiver.Subtract(others)
+
+		// Verify first two elements were modified, third unchanged
+		expected := Tensors{4.0, 4.0, 7.0}
+		for i := range expected {
+			if math.Abs(float64(receiver[i]-expected[i])) > 1e-10 {
+				t.Errorf("Subtract() result[%d] = %v, want %v", i, receiver[i], expected[i])
+			}
+		}
+	})
+}
+
+func BenchmarkTensors_Subtract(b *testing.B) {
+	receiver := Tensors{5.0, 6.0, 7.0, 8.0, 9.0}
+	others := Tensors{1.0, 1.0, 1.0, 1.0, 1.0}
+
+	for b.Loop() {
+		// Reset receiver for each iteration
+		copy(receiver, Tensors{5.0, 6.0, 7.0, 8.0, 9.0})
+		receiver.Subtract(others)
+	}
+}
