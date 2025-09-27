@@ -11,11 +11,11 @@ import (
 type Neuron struct {
 	weights      tensor.Tensors
 	bias         tensor.Tensor
-	activation   activation.Function
+	activation   activation.Activation
 	learningRate tensor.Tensor
 }
 
-func NewNeuron(size int, learningRate tensor.Tensor) *Neuron {
+func NewNeuron(size int, learningRate tensor.Tensor, activation activation.Activation) *Neuron {
 	weights := make(tensor.Tensors, 0, size)
 
 	for range size {
@@ -25,7 +25,7 @@ func NewNeuron(size int, learningRate tensor.Tensor) *Neuron {
 	neuron := Neuron{
 		weights:      weights,
 		bias:         tensor.Tensor(rand.Float64() - 0.5), // -0.5 to 0.5
-		activation:   activation.Sigmoid,
+		activation:   activation,
 		learningRate: learningRate,
 	}
 
@@ -42,11 +42,11 @@ func (n *Neuron) Forward(inputs tensor.Tensors) tensor.Tensor {
 	// Add bias
 	output += n.bias
 
-	return n.activation(output)
+	return n.activation.Activate(output)
 }
 
 func (n *Neuron) BackPropagation(errVal tensor.Tensor, inputs tensor.Tensors, output tensor.Tensor) tensor.Tensors {
-	slope := activation.SigmoidSlope(output)
+	slope := n.activation.Derive(output)
 
 	// Calculate gradients
 	gradients := make(tensor.Tensors, 0, len(n.weights))

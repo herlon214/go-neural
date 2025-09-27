@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 
+	"github.com/herlon214/go-neural/activation"
 	"github.com/herlon214/go-neural/tensor"
 )
 
@@ -10,10 +11,10 @@ type Layer struct {
 	neurons []*Neuron
 }
 
-func NewLayer(inputSize int, totalNeurons int, learningRate tensor.Tensor) *Layer {
+func NewLayer(inputSize int, totalNeurons int, learningRate tensor.Tensor, activation activation.Activation) *Layer {
 	neurons := make([]*Neuron, 0, totalNeurons)
 	for range totalNeurons {
-		neurons = append(neurons, NewNeuron(inputSize, learningRate))
+		neurons = append(neurons, NewNeuron(inputSize, learningRate, activation))
 	}
 
 	return &Layer{

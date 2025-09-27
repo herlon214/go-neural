@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/herlon214/go-neural/activation"
 	"github.com/herlon214/go-neural/tensor"
 )
 
@@ -17,7 +18,14 @@ type Network struct {
 	disableBackpropagation bool
 }
 
-func New(inputSize int, hiddenLayersSize []int, outputLayerSize int, learningRate tensor.Tensor) *Network {
+func New(
+	inputSize int,
+	hiddenLayersSize []int,
+	hiddenLayersActivation []activation.Activation,
+	outputLayerSize int,
+	outputLayerActivation activation.Activation,
+	learningRate tensor.Tensor,
+) *Network {
 	// Hidden layer
 	hiddenLayers := make([]*Layer, 0, len(hiddenLayersSize))
 	for i, val := range hiddenLayersSize {
@@ -26,7 +34,7 @@ func New(inputSize int, hiddenLayersSize []int, outputLayerSize int, learningRat
 			inputSize = hiddenLayers[i-1].Size()
 		}
 
-		hiddenLayers = append(hiddenLayers, NewLayer(inputSize, val, learningRate))
+		hiddenLayers = append(hiddenLayers, NewLayer(inputSize, val, learningRate, hiddenLayersActivation[i]))
 	}
 
 	// Output layer
@@ -34,7 +42,7 @@ func New(inputSize int, hiddenLayersSize []int, outputLayerSize int, learningRat
 
 	return &Network{
 		hiddenLayers: hiddenLayers,
-		outputLayer:  NewLayer(outputLayerInputSize, outputLayerSize, learningRate),
+		outputLayer:  NewLayer(outputLayerInputSize, outputLayerSize, learningRate, outputLayerActivation),
 	}
 }
 
