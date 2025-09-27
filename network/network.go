@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/herlon214/go-neural/activation"
 	"github.com/herlon214/go-neural/tensor"
 )
 
@@ -20,29 +19,27 @@ type Network struct {
 
 func New(
 	inputSize int,
-	hiddenLayersSize []int,
-	hiddenLayersActivation []activation.Activation,
-	outputLayerSize int,
-	outputLayerActivation activation.Activation,
+	hiddenLayersBuilder []*LayerBuilder,
+	outputLayerBuilder *LayerBuilder,
 	learningRate tensor.Tensor,
 ) *Network {
 	// Hidden layer
-	hiddenLayers := make([]*Layer, 0, len(hiddenLayersSize))
-	for i, val := range hiddenLayersSize {
+	hiddenLayers := make(Layers, 0, len(hiddenLayersBuilder))
+	for i, builder := range hiddenLayersBuilder {
 		// Next layer uses the previous layer size
 		if i > 0 {
-			inputSize = hiddenLayers[i-1].Size()
+			inputSize = hiddenLayers.Last().Size()
 		}
 
-		hiddenLayers = append(hiddenLayers, NewLayer(inputSize, val, learningRate, hiddenLayersActivation[i]))
+		hiddenLayers = append(hiddenLayers, builder.Build(inputSize, learningRate))
 	}
 
 	// Output layer
-	outputLayerInputSize := hiddenLayers[len(hiddenLayers)-1].Size()
+	outputLayerInputSize := hiddenLayers.Last().Size()
 
 	return &Network{
 		hiddenLayers: hiddenLayers,
-		outputLayer:  NewLayer(outputLayerInputSize, outputLayerSize, learningRate, outputLayerActivation),
+		outputLayer:  outputLayerBuilder.Build(outputLayerInputSize, learningRate),
 	}
 }
 

@@ -19,12 +19,17 @@ func main() {
 		{Inputs: tensor.Tensors{1, 1}, Target: tensor.Tensors{0}},
 	}
 
+	hiddenLayers := []*network.LayerBuilder{
+		network.NewLayerBuilder().
+			SetNeurons(3).
+			SetActivation(activation.NewReLU()),
+	}
+	outputLayer := network.NewLayerBuilder().SetNeurons(1).SetActivation(activation.NewSigmoid())
+
 	neuralNetwork := network.New(
 		2,
-		[]int{2},
-		[]activation.Activation{activation.NewReLU()},
-		1,
-		activation.NewReLU(),
+		hiddenLayers,
+		outputLayer,
 		learningRate,
 	)
 
